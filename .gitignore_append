@@ -1,0 +1,16 @@
+# Add to .gitignore if not already present:
+.env.local
+.env.*.local
+node_modules/
+.next/
+out/
+build/
+dist/
+.DS_Store
+*.pem
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.vercel
