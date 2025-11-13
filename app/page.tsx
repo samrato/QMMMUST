@@ -67,7 +67,7 @@ export default function LoginPage() {
               <label className="text-sm font-medium">Registration Number</label>
               <Input
                 type="text"
-                placeholder="e.g., CS/2021/001"
+                placeholder="e.g.,E/2021/001"
                 value={registrationNumber}
                 onChange={(e) => setRegistrationNumber(e.target.value)}
                 disabled={isLoading}
