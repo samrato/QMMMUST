@@ -2,30 +2,11 @@ import { getSupabaseServer } from "@/lib/supabase/server"
 import { verifyJWT } from "@/lib/utils/jwt"
 import { type NextRequest, NextResponse } from "next/server"
 import QRCode from "qrcode"
+import { Resend } from "resend"
 
-/**
- * POST /api/student/generate-pass
- *
- * Generate QR code and PIN for gate pass
- *
- * Headers:
- * Authorization: Bearer {token}
- *
- * Request body:
- * {
- *   "device_id": "uuid"
- * }
- *
- * Response:
- * {
- *   "gatePass": {
- *     "id": "uuid",
- *     "qr_code": "base64_encoded_image",
- *     "pin": "123456",
- *     "expires_at": "2024-01-02T00:00:00Z"
- *   }
- * }
- */
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY)
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
@@ -45,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Verify device belongs to student
     const { data: device } = await supabase
       .from("devices")
-      .select("*")
+      .select("*, users(name,email)")
       .eq("id", device_id)
       .eq("student_id", decoded.sub)
       .single()
@@ -84,6 +65,36 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: "Failed to generate gate pass" }, { status: 500 })
+    }
+
+    // --- Send Email Notification ---
+    const studentEmail = device.users.email
+    const studentName = device.users.name
+
+    const emailHtml = `
+      <p>Hi ${studentName},</p>
+      <p>Your gate pass has been generated for device <strong>${device.device_name}</strong>.</p>
+      <p>PIN: <strong>${pin}</strong></p>
+      <p>Scan the QR code below at the gate:</p>
+      <img src="${qrCode}" alt="QR Code" />
+      <p>This gate pass is valid for one-time use. If you did not request this, please report immediately.</p>
+    `
+
+    try {
+      await resend.emails.send({
+        from: "noreply@willingtonjuma.space", // ✔ Verified domain email
+        to: studentEmail,
+        subject: "Your QMMUST Gate Pass ",
+        html: emailHtml,
+      })
+
+      // Mark email as sent
+      await supabase
+        .from("gate_passes")
+        .update({ email_sent_at: new Date().toISOString() })
+        .eq("id", gatePass.id)
+    } catch (err) {
+      console.error("Failed to send gate pass email:", err)
     }
 
     return NextResponse.json({ gatePass }, { status: 201 })
