@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       if (!device.users.email) throw new Error("Student email not found")
 
       await resend.emails.send({
-        from: "info@willingtonjuma.space", // Verified domain email
+        from: "onboarding@resend.dev", // Verified domain email
         to: device.users.email,
         subject: "Your QMMUST Gate Pass",
         html: `
