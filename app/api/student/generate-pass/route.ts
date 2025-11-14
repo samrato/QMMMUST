@@ -4,22 +4,28 @@ import { type NextRequest, NextResponse } from "next/server"
 import QRCode from "qrcode"
 import { Resend } from "resend"
 
-// Initialize Resend with API key
+// Force Node.js runtime for Vercel
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+// Ensure RESEND_API_KEY is set
+if (!process.env.RESEND_API_KEY) {
+  throw new Error("RESEND_API_KEY is not set in environment variables")
+}
+
+// Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse body
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     const { device_id } = await request.json()
 
-    if (!token) {
-      return NextResponse.json({ error: "No authorization token provided" }, { status: 401 })
-    }
+    if (!token) return NextResponse.json({ error: "No authorization token provided" }, { status: 401 })
 
     const decoded = await verifyJWT(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
-    }
+    if (!decoded) return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
 
     const supabase = await getSupabaseServer()
 
@@ -31,61 +37,45 @@ export async function POST(request: NextRequest) {
       .eq("student_id", decoded.sub)
       .single()
 
-    if (!device) {
-      return NextResponse.json({ error: "Device not found" }, { status: 404 })
-    }
+    if (!device) return NextResponse.json({ error: "Device not found" }, { status: 404 })
 
-    // Generate PIN (6 digits)
+    // Generate 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString()
 
-    // Generate QR code data
+    // Generate QR code (smaller width)
     const qrData = JSON.stringify({
       studentId: decoded.sub,
       deviceId: device_id,
       rfidTag: device.rfid_tag,
       timestamp: new Date().toISOString(),
     })
+    const qrCode = await QRCode.toDataURL(qrData, { width: 200, margin: 1 })
 
-    // Generate QR code as data URL
-    const qrCode = await QRCode.toDataURL(qrData)
-
-    // Save gate pass to database
+    // Save gate pass
     const { data: gatePass, error } = await supabase
       .from("gate_passes")
-      .insert([
-        {
-          student_id: decoded.sub,
-          device_id,
-          qr_code: qrCode,
-          pin,
-        },
-      ])
+      .insert([{ student_id: decoded.sub, device_id, qr_code: qrCode, pin }])
       .select()
       .single()
 
-    if (error) {
-      return NextResponse.json({ error: "Failed to generate gate pass" }, { status: 500 })
-    }
+    if (error) return NextResponse.json({ error: "Failed to generate gate pass" }, { status: 500 })
 
     // --- Send Email Notification ---
-    const studentEmail = device.users.email
-    const studentName = device.users.name
-
-    const emailHtml = `
-      <p>Hi ${studentName},</p>
-      <p>Your gate pass has been generated for device <strong>${device.device_name}</strong>.</p>
-      <p>PIN: <strong>${pin}</strong></p>
-      <p>Scan the QR code below at the gate:</p>
-      <img src="${qrCode}" alt="QR Code" />
-      <p>This gate pass is valid for one-time use. If you did not request this, please report immediately.</p>
-    `
-
     try {
+      if (!device.users.email) throw new Error("Student email not found")
+
       await resend.emails.send({
-        from: "info@willingtonjuma.space", // ✔ Verified domain email
-        to: studentEmail,
-        subject: "Your QMMUST Gate Pass ",
-        html: emailHtml,
+        from: "info@willingtonjuma.space", // Verified domain email
+        to: device.users.email,
+        subject: "Your QMMUST Gate Pass",
+        html: `
+          <p>Hi ${device.users.name},</p>
+          <p>Your gate pass has been generated for <strong>${device.device_name}</strong>.</p>
+          <p>PIN: <strong>${pin}</strong></p>
+          <p>Scan the QR code below at the gate:</p>
+          <img src="${qrCode}" alt="QR Code" />
+          <p>This gate pass is valid for one-time use. If this was not requested by you, report immediately.</p>
+        `,
       })
 
       // Mark email as sent
@@ -93,8 +83,8 @@ export async function POST(request: NextRequest) {
         .from("gate_passes")
         .update({ email_sent_at: new Date().toISOString() })
         .eq("id", gatePass.id)
-    } catch (err) {
-      console.error("Failed to send gate pass email:", err)
+    } catch (emailError) {
+      console.error("Failed to send gate pass email:", emailError)
     }
 
     return NextResponse.json({ gatePass }, { status: 201 })
