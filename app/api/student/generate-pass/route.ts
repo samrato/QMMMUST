@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: "noreply@willingtonjuma.space", // ✔ Verified domain email
+        from: "info@willingtonjuma.space", // ✔ Verified domain email
         to: studentEmail,
         subject: "Your QMMUST Gate Pass ",
         html: emailHtml,
