@@ -104,11 +104,11 @@ export async function POST(request: NextRequest) {
       },
     ])
 
-    // Mark gate pass as used
-    // await supabase
-    //   .from("gate_passes")
-    //   .update({ is_used: true, used_at: new Date().toISOString() })
-    //   .eq("id", gatePass.id)
+    Mark gate pass as used
+    await supabase
+      .from("gate_passes")
+      .update({ is_used: true, used_at: new Date().toISOString() })
+      .eq("id", gatePass.id)
 
     // Create alert/notification
     const message = `Your device (${device.device_name}) has exited MMUST premises at ${new Date().toLocaleTimeString()}. If this was not you, please report immediately.`
