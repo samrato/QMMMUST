@@ -1,4 +1,3 @@
-
 import { getSupabaseServer } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
       .eq("device_id", device.id)
       .eq("pin", pin)
       .eq("is_used", false)
-      // .gte("expires_at", new Date().toISOString())
+      .gte("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
       .single()
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
       },
     ])
 
-
+    // Mark gate pass as used
     await supabase
       .from("gate_passes")
       .update({ is_used: true, used_at: new Date().toISOString() })
