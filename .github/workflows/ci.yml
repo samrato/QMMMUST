@@ -15,36 +15,23 @@ jobs:
     steps:
       # 1. Checkout the repo
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 2. Setup Node.js
+      # 2. Setup Node.js (Next.js requires >=20.9.0)
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18' # or your project Node.js version
+          node-version: '20.10.0'
+          cache: 'npm'   # built-in cache
 
-      # 3. Cache node modules for faster builds
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # 4. Install dependencies
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-
-      # 5. Lint code
+      # 4. Lint code
       - name: Lint code
         run: npm run lint || echo "Lint warnings found"
 
-      # 6. Build Next.js project
+      # 5. Build Next.js project
       - name: Build project
         run: npm run build
-
-      # 7. Optional: Run tests
-      # - name: Run tests
-      #   run: npm test
