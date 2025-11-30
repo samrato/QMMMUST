@@ -276,4 +276,4 @@ For issues or questions:
 
 ## License
 
-Proprietary - Masinde Muliro University
+Proprietary - Masinde Muliro University the Gate pass system
