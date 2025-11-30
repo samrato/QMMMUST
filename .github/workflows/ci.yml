@@ -1,0 +1,49 @@
+name: Next.js CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # or your project Node.js version
+
+      # 3. Cache node modules for faster builds
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 5. Lint code
+      - name: Lint code
+        run: npm run lint || echo "Lint warnings found"
+
+      # 6. Build Next.js project
+      - name: Build project
+        run: npm run build
+
+      # 7. Optional: Run tests
+      # - name: Run tests
+      #   run: npm test
