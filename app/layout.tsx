@@ -11,7 +11,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "QMMUST",
   description: "Advanced gate pass and asset tracking system for QMMUST",
-  generator: "v0.app",
+  generator: "samrato",
   keywords: ["gate pass", "asset tracking", "student management"],
   viewport: {
     width: "device-width",

@@ -64,6 +64,7 @@
     "react-is": "^19.2.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "latest",
+    "resend": "^6.5.2",
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
