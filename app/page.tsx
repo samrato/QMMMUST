@@ -92,7 +92,7 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
             <p className="text-xs text-amber-800">
-              If you don't have an account or have forgotten your credentials, please contact the IT department QMMUST.
+              If you don't have an account or have forgotten your credentials, please contact the IT department QMMUST. ...Here are the test demo ....COM/B/01-95/2021  password: juma123
             </p>
           </div>
         </CardContent>
